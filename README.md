@@ -6,7 +6,7 @@
 
 *Un plugin pour créer des arbres de progrès personnalisés.*
 
-<img src="https://img.shields.io/badge/Paper-1.21.11-f2a900?style=for-the-badge" alt="Paper 1.21.11"> <img src="https://img.shields.io/badge/Java-21-e76f00?style=for-the-badge" alt="Java 21"> <img src="https://img.shields.io/badge/SkyHand-Opale-3aa655?style=for-the-badge" alt="SkyHand Opale">
+<img src="https://img.shields.io/badge/Paper-26.3-f2a900?style=for-the-badge" alt="Paper 26.3"> <img src="https://img.shields.io/badge/Java-25-e76f00?style=for-the-badge" alt="Java 25"> <img src="https://img.shields.io/badge/SkyHand-Opale-3aa655?style=for-the-badge" alt="SkyHand Opale">
 
 </div>
 
@@ -37,7 +37,7 @@ Utilisé sur : **Opale**.
 
 ## Compilation
 
-Java 21 et Maven :
+Java 25 et Maven :
 
 ```bash
 mvn clean package
