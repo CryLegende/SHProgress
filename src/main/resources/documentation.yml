@@ -1,0 +1,162 @@
+# ==================================================================================== #
+# ==           DOCUMENTATION DE CONFIGURATION POUR LE PLUGIN SHPROGRESS             == #
+# ==================================================================================== #
+#
+# Ce fichier sert de guide complet pour toutes les options disponibles.
+# Chaque fichier .yml placé dans le dossier /plugins/SHProgress/trees/ est un arbre
+# de progrès indépendant, qui apparaît comme un nouvel onglet dans le menu des progrès (Touche L).
+#
+# Copiez et adaptez ce fichier pour créer vos propres arbres de progrès.
+#
+# ==================================================================================== #
+
+
+# ------------------------------------------------------------------------------------ #
+# SECTION 'options' : Configure l'onglet entier (l'arbre de progrès).
+# ------------------------------------------------------------------------------------ #
+options:
+  # display_name: Le titre de votre onglet, visible en jeu.
+  # Les codes couleurs avec '&' sont supportés.
+  # Exemple : "&aProgrès de l'Aventure"
+  display_name: "&6Exemple de Progrès"
+
+  # description: Le texte affiché lorsque le joueur passe sa souris sur l'icône de l'onglet.
+  # Supporte les codes couleurs '&' et les sauts de ligne avec "|-".
+  description: |-
+    &eCeci est un arbre d'exemple pour vous montrer
+    &ecomment configurer vos propres progrès !
+
+  # item: L'icône de l'onglet.
+  # Doit être un nom de matériau valide de Minecraft/Bukkit.
+  # Liste disponible ici : https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+  # Exemple : DIAMOND_SWORD, EMERALD_BLOCK, BOOK
+  item: BOOK
+
+  # minecraft-gui-background: La texture de fond pour l'interface de cet onglet.
+  # Doit être un chemin de texture valide du jeu.
+  # Exemples :
+  #   - textures/block/stone.png
+  #   - textures/gui/advancements/backgrounds/adventure.png
+  #   - textures/gui/advancements/backgrounds/nether.png
+  #   - textures/gui/advancements/backgrounds/end.png
+  minecraft-gui-background: textures/gui/advancements/backgrounds/stone.png
+
+
+# ------------------------------------------------------------------------------------ #
+# SECTION 'advancements' : Contient tous les progrès de cet arbre.
+# ------------------------------------------------------------------------------------ #
+advancements:
+  # 'id_unique_du_progres': Ceci est l'identifiant interne du progrès.
+  # Il doit être unique DANS CE FICHIER. Il est utilisé pour les dépendances (requirements).
+  # Utilisez des noms simples et descriptifs (ex: premier_diamant, tuer_le_dragon).
+  racine_de_lexemple:
+    # type: L'action que le joueur doit accomplir.
+    # Valeurs possibles :
+    #   - BlockBreak: Casser un bloc.
+    #   - BlockPlace: Poser un bloc.
+    #   - CraftItem: Fabriquer un objet.
+    #   - killentity: Tuer une entité.
+    #   - consume: Manger ou boire un objet.
+    #   - impossible: Ne peut être progressé que par une commande admin.
+    type: BlockBreak
+
+    # value: La cible de l'action.
+    # Pour BlockBreak/BlockPlace/CraftItem/consume : un nom de Material (ex: DIRT).
+    # Pour killentity : un nom d'EntityType (ex: ZOMBIE). Le mot-clé 'any' fonctionne aussi.
+    # Pour 'impossible' : la valeur est ignorée (vous pouvez mettre 'none').
+    # Vous pouvez lister plusieurs valeurs en les séparant par une virgule (ex: "WHEAT,CARROTS").
+    value: OAK_LOG
+
+    # amount: Le nombre de fois que l'action doit être répétée.
+    amount: 1
+
+    # requirements: (Optionnel) Définit les progrès parents.
+    # Ce progrès ne sera visible qu'une fois son parent complété.
+    # La racine de l'arbre (le premier progrès) n'a pas cette section.
+    # requirements:
+    #   le_parent: # La clé ici n'a pas d'importance.
+    #     type: advancement
+    #     value: tree.id_du_parent # Fait référence à un autre ID de ce fichier.
+
+    # rewards: (Optionnel) Ce que le joueur reçoit en complétant le progrès.
+    rewards:
+      message_de_bienvenue: # La clé ici n'a pas d'importance.
+        type: message # 'message' ou 'command'
+        value: "&aVous avez commencé l'arbre d'exemple !"
+      don_de_bois:
+        type: command
+        # %player% est automatiquement remplacé par le nom du joueur.
+        # La commande est exécutée par la console.
+        value: "give %player% oak_planks 5"
+
+    # display: Configure l'apparence visuelle du progrès.
+    display:
+      # name: Le titre du progrès. Supporte les codes couleurs '&'.
+      name: "Un nouveau départ"
+      # item: L'icône du progrès (un Material valide).
+      item: OAK_SAPLING
+      # description: Le texte affiché au survol du progrès.
+      description: "Coupez votre premier arbre."
+
+      # x et y: Coordonnées dans l'interface.
+      # x est horizontal (gauche à droite), y est vertical (haut en bas).
+      x: 0
+      y: 0
+
+      # minecraft-gui-frame: Le cadre autour de l'icône.
+      # Valeurs possibles :
+      #   - TASK: Carré (standard)
+      #   - GOAL: Arrondi (pour les étapes importantes)
+      #   - CHALLENGE: Orné (pour les défis finaux)
+      minecraft-gui-frame: TASK
+
+      # minecraft-toast: (true/false) Affiche ou non la notification en haut à droite.
+      minecraft-toast: true
+
+      # minecraft-chat-announce: (true/false) Annonce ou non l'accomplissement dans le chat global.
+      minecraft-chat-announce: false
+
+  # --- Deuxième progrès, qui dépend du premier ---
+  etabli_de_travail:
+    type: CraftItem
+    value: CRAFTING_TABLE
+    amount: 1
+    requirements:
+      parent: # La clé ici peut être ce que vous voulez.
+        type: advancement
+        value: tree.racine_de_lexemple # Cet ID doit exister dans ce fichier.
+    display:
+      name: "L'art de la création"
+      item: CRAFTING_TABLE
+      description: "Fabriquez un établi pour commencer à crafter."
+      x: 2 # On le place à droite de la racine.
+      y: 0
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+      minecraft-chat-announce: false
+
+  # --- Progrès de type 'impossible' ---
+  vote_pour_le_serveur:
+    type: impossible
+    value: none # La valeur est ignorée.
+    amount: 10 # Le joueur doit voter 10 fois.
+    requirements:
+      parent:
+        type: advancement
+        value: tree.etabli_de_travail
+    rewards:
+      recompense_vote:
+        type: command
+        value: "crate give %player% vote 1"
+    display:
+      name: "Citoyen Modèle"
+      item: PAPER
+      description: |-
+        &7Votez 10 fois pour le serveur.
+        &eCommande à utiliser :
+        &f/shprogress progress %player% exemple/vote_pour_le_serveur 1
+      x: 4 # Encore plus à droite.
+      y: 1 # Un peu plus bas pour faire joli.
+      minecraft-gui-frame: GOAL
+      minecraft-toast: true
+      minecraft-chat-announce: true

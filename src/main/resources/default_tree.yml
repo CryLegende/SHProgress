@@ -1,0 +1,360 @@
+options:
+  display_name: "Votre aventure sur SkyHand"
+  description: "&eComplétez les progrès au fur et à mesure de votre aventure sur SkyHand !"
+  item: OAK_SAPLING
+  minecraft-gui-background: "textures/block/gray_glazed_terracotta.png"
+
+advancements:
+
+  # --- BRANCHE 1 : MINAGE ---
+  charbon:
+    type: BlockBreak
+    value: COAL_ORE
+    amount: 1
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez miné votre premier minerais de charbon ! Le générateur de votre île peut générer de la pierre, du charbon et du fer." }
+    display:
+      name: "Pas que de la pierre ?"
+      item: COAL_ORE
+      description: "Minez un minerai de charbon."
+      x: 1
+      y: 1.5
+      minecraft-gui-frame: GOAL
+      minecraft-toast: true
+
+  fer_charbon:
+    type: BlockBreak
+    value: COAL_ORE,IRON_ORE
+    amount: 500
+    requirements:
+      parent: { type: advancement, value: "tree.charbon" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez miné 500 minerais de charbon/fer, le générateur à l'air de vous plaire !" }
+    display:
+      name: "Réserve de Minerais"
+      item: IRON_ORE
+      description: "Minez 500 minerais de fer ou de charbon."
+      x: 2
+      y: 0.5
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  endstone:
+    type: BlockBreak
+    value: END_STONE
+    amount: 1
+    requirements:
+      parent: { type: advancement, value: "tree.fer_charbon" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez boosté votre générateur, mais à quel prix ?" }
+    display:
+      name: "Des minerais ? §5(END)"
+      item: END_STONE
+      description: "Minez un bloc de pierre de l'end."
+      x: 3
+      y: 0
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  netherracks:
+    type: BlockBreak
+    value: NETHERRACK
+    amount: 1
+    requirements:
+      parent: { type: advancement, value: "tree.fer_charbon" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez boosté votre générateur, celui ci ne produira que des blocs du nether pour les 60 prochaines minutes !\n&7&o(C'est vraiment ce que vous voulez ?)" }
+    display:
+      name: "Des minerais ? §c(NETHER)"
+      item: NETHERRACK
+      description: "Minez un bloc de netherrack."
+      x: 3
+      y: 1
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  diamant:
+    type: BlockBreak
+    value: DIAMOND_ORE
+    amount: 12
+    requirements:
+      parent: { type: advancement, value: "tree.charbon" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Qu'allez-vous faire de ces diamants, une pioche ou une armure ? (Une houe ?!)" }
+    display:
+      name: "Rareté Élevée"
+      item: DIAMOND_ORE
+      description: "Minez 12 minerais de Diamant."
+      x: 2
+      y: 1.5
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  debris_antique:
+    type: BlockBreak
+    value: ANCIENT_DEBRIS
+    amount: 1
+    requirements:
+      parent: { type: advancement, value: "tree.diamant" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Ces débris mystérieux sont très rares, prenez-en soin !" }
+    display:
+      name: "Des minerais ? §9(ANTIQUE)"
+      item: ANCIENT_DEBRIS
+      description: "Minez un bloc de débris antiques."
+      x: 3
+      y: 2
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  netherite_ingots:
+    type: CraftItem
+    value: NETHERITE_INGOT
+    amount: 1
+    requirements:
+      parent: { type: advancement, value: "tree.debris_antique" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Il n'y a pas plus solide que la netherite, mais ce n'est pas invincible." }
+    display:
+      name: "Dureté Absolue"
+      item: NETHERITE_INGOT
+      description: "Fabriquez un lingot de netherite."
+      x: 4
+      y: 2
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  # --- BRANCHE 2 : SPAWNERS & MOBS ---
+  spawners:
+    type: BlockPlace
+    value: SPAWNER
+    amount: 1
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez posé votre premier spawner, c'est le début de la richesse ! 1 spawner = 1 mob qui spawn toutes les 30-50 secondes." }
+    display:
+      name: "Argent Facile !"
+      item: SPAWNER
+      description: "Posez un spawner sur votre île."
+      x: 1
+      y: 4
+      minecraft-gui-frame: GOAL
+      minecraft-toast: true
+
+  killmobs:
+    type: killentity
+    value: any
+    amount: 5000
+    requirements:
+      parent: { type: advancement, value: "tree.spawners" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez tué 5000 mobs, c'est un sacré massacre... Mais pour des SHCoins, tout est permis !" }
+    display:
+      name: "Argent Vraiment si Facile ?"
+      item: BONE
+      description: "Tuez 5000 mobs."
+      x: 2
+      y: 4
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  killzombies:
+    type: killentity
+    value: ZOMBIE
+    amount: 5000
+    requirements:
+      parent: { type: advancement, value: "tree.killmobs" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &75000 zombies tués, je suppose que tu ne t'arrêteras pas à si peu ?" }
+    display:
+      name: "Tueur de Zombie"
+      item: ZOMBIE_SPAWN_EGG
+      description: "Tuez 5000 zombies."
+      x: 3
+      y: 3
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  killskeletons:
+    type: killentity
+    value: SKELETON
+    amount: 5000
+    requirements:
+      parent: { type: advancement, value: "tree.killmobs" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &75000 squelettes tués, ils l'ont dans l'os !" }
+    display:
+      name: "Tueur de Squelette"
+      item: SKELETON_SPAWN_EGG
+      description: "Tuez 5000 squelettes."
+      x: 3
+      y: 4
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  killcreeper:
+    type: killentity
+    value: CREEPER
+    amount: 5000
+    requirements:
+      parent: { type: advancement, value: "tree.killmobs" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &75000 creeper tués, ton aventure est explosive !" }
+    display:
+      name: "Tueur de Creeper"
+      item: CREEPER_SPAWN_EGG
+      description: "Tuez 5000 creepers."
+      x: 3
+      y: 5
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  # --- BRANCHE 3 : AGRICULTURE ---
+  agriculture:
+    type: BlockPlace
+    value: DIRT
+    amount: 1500
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez placé 1500 blocs de terre, bêchez là et cultivez des plantations pour enrichir votre Porte monnaie &8(SHCoins) &7!" }
+    display:
+      name: "Travailler la Terre"
+      item: FARMLAND
+      description: "Placer 1500 blocs de terre."
+      x: 1
+      y: 8
+      minecraft-gui-frame: GOAL
+      minecraft-toast: true
+
+  harvestbeetroot:
+    type: BlockBreak
+    value: BEETROOTS
+    amount: 5000
+    requirements:
+      parent: { type: advancement, value: "tree.agriculture" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez extrait 5000 betteraves ! Cette réserve massive alimentera vos teintures et potions pour de longues aventures." }
+    display:
+      name: "Arracheur de Betteraves"
+      item: BEETROOT
+      description: "Récoltez 5000 betteraves."
+      x: 2
+      y: 7
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  harvestpotatoes:
+    type: BlockBreak
+    value: POTATOES
+    amount: 5000
+    requirements:
+      parent: { type: advancement, value: "tree.agriculture" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Avec 5000 patates récoltées, vous avez amassé des ressources vitales pour soutenir de grandes expéditions ou le commerce." }
+    display:
+      name: "Arracheur de Patates"
+      item: POTATO
+      description: "Récoltez 5000 patates."
+      x: 2
+      y: 8
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  harvestcarrots:
+    type: BlockBreak
+    value: CARROTS
+    amount: 5000
+    requirements:
+      parent: { type: advancement, value: "tree.agriculture" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez arraché 5000 carottes, c'est une sacrée moisson... Votre jardin va s'en souvenir longtemps !" }
+    display:
+      name: "Arracheur de Carottes"
+      item: CARROT
+      description: "Récoltez 5000 carottes."
+      x: 2
+      y: 9
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  harvestsweet_berries:
+    type: consume
+    value: SWEET_BERRIES
+    amount: 1
+    requirements:
+      parent: { type: advancement, value: "tree.harvestbeetroot" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Miam, c'est sucré !" }
+    display:
+      name: "Dévoreur de Baies Sucrées"
+      item: SWEET_BERRIES
+      description: "Mangez une baie sucrée."
+      x: 3
+      y: 6.5
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  harvestglow_berries:
+    type: consume
+    value: GLOW_BERRIES
+    amount: 1
+    requirements:
+      parent: { type: advancement, value: "tree.harvestbeetroot" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Ça brille dans le ventre !" }
+    display:
+      name: "Dévoreur de Baies Lumineuses"
+      item: GLOW_BERRIES
+      description: "Mangez une baie lumineuse."
+      x: 3
+      y: 7.5
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  # --- BRANCHE 4 : VOTE ---
+  boxordinaire1:
+    type: impossible
+    value: none
+    amount: 1
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7La box ordinaire permet de progresser plus rapidement, votez pour gagner un maximum de clés pour rouvrir la box ordinaire !" }
+    display:
+      name: "Votez & Gagnez I"
+      item: IRON_INGOT
+      description: "Ouvrez une box ordinaire."
+      x: 1
+      y: 11
+      minecraft-gui-frame: GOAL
+      minecraft-toast: true
+
+  boxordinaire2:
+    type: impossible
+    value: none
+    amount: 100
+    requirements:
+      parent: { type: advancement, value: "tree.boxordinaire1" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez ouvert 100 box ordinaires, pas mal mais pas si impressionnant, tu peux mieux faire." }
+    display:
+      name: "Votez & Gagnez II"
+      item: COPPER_INGOT
+      description: "Ouvrez 100 box ordinaires."
+      x: 2
+      y: 11
+      minecraft-gui-frame: TASK
+      minecraft-toast: true
+
+  boxordinaire3:
+    type: impossible
+    value: none
+    amount: 1000
+    requirements:
+      parent: { type: advancement, value: "tree.boxordinaire2" }
+    rewards:
+      message: { type: message, value: "&7&l« &dProgrès &8&l» &7Vous avez ouvert 1000 box ordinaires, là c'est impressionnant." }
+    display:
+      name: "Votez & Gagnez III"
+      item: GOLD_INGOT
+      description: "Ouvrez 1000 box ordinaires."
+      x: 3
+      y: 11
+      minecraft-gui-frame: CHALLENGE
+      minecraft-toast: true

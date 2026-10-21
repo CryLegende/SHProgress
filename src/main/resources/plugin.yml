@@ -1,0 +1,21 @@
+name: SHProgress
+version: '${project.version}'
+main: org.Cry_Legende.sHProgress.SHProgress
+api-version: '1.21'
+author: Cry_Legende
+description: Un plugin pour créer des arbres de progrès personnalisés.
+depend: [UltimateAdvancementAPI]
+
+commands:
+  shprogress:
+    description: Commande principale pour gérer le plugin SHProgress.
+    usage: /shprogress <progress|reload>
+    aliases: [shp]
+
+permissions:
+  shprogress.admin.progress:
+    description: Permet de faire progresser un joueur dans un objectif.
+    default: op
+  shprogress.admin.reload:
+    description: Permet de recharger la configuration du plugin.
+    default: op
