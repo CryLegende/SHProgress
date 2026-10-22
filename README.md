@@ -35,6 +35,16 @@ Utilisé sur : **Opale**.
 | `shprogress.admin.progress` | Permet de faire progresser un joueur dans un objectif. | `op` |
 | `shprogress.admin.reload` | Permet de recharger la configuration du plugin. | `op` |
 
+## Configuration
+
+Fichiers par défaut repris du serveur (secrets remplacés par `CHANGE_ME`). Cliquez sur un fichier pour l'ouvrir :
+
+<pre>
+plugins/SHProgress/
+├── <a href="src/main/resources/default_tree.yml">default_tree.yml</a>
+└── <a href="src/main/resources/documentation.yml">documentation.yml</a>
+</pre>
+
 ## Compilation
 
 Java 25 et Maven :
