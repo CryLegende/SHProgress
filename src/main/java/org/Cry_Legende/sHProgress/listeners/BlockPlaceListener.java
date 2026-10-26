@@ -25,15 +25,10 @@ public class BlockPlaceListener implements Listener {
         Player player = event.getPlayer();
         Material placedBlockType = event.getBlock().getType();
 
-        for (ConfiguredAdvancement advConfig : manager.getConfiguredAdvancements()) {
-            if ("blockplace".equalsIgnoreCase(advConfig.getType())) {
-                String[] requiredBlocks = advConfig.getValue().split(",");
-                for (String blockName : requiredBlocks) {
-                    if (placedBlockType.name().equalsIgnoreCase(blockName.trim())) {
-                        dataManager.incrementProgression(player, advConfig, 1);
-                        break;
-                    }
-                }
+        // Seuls les progrès "blockplace" sont parcourus, valeurs déjà découpées au chargement
+        for (ConfiguredAdvancement advConfig : manager.getByType("blockplace")) {
+            if (advConfig.matchesExact(placedBlockType.name())) {
+                dataManager.incrementProgression(player, advConfig, 1);
             }
         }
     }

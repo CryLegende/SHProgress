@@ -85,7 +85,12 @@ public class AdvancementManager {
         ConfigurationSection advancementsSection = config.getConfigurationSection("advancements");
         if (advancementsSection != null) {
             for (String key : advancementsSection.getKeys(false)) {
-                ConfiguredAdvancement configuredAdv = new ConfiguredAdvancement(tabId, key, advancementsSection.getConfigurationSection(key));
+                ConfigurationSection advSection = advancementsSection.getConfigurationSection(key);
+                if (advSection == null) {
+                    plugin.getLogger().warning("Progrès '" + key + "' de l'arbre '" + tabId + "' ignoré : bloc invalide.");
+                    continue;
+                }
+                ConfiguredAdvancement configuredAdv = new ConfiguredAdvancement(tabId, key, advSection);
                 advancementsToProcess.add(configuredAdv);
                 this.configuredAdvancements.put(configuredAdv.getFullId(), configuredAdv);
             }

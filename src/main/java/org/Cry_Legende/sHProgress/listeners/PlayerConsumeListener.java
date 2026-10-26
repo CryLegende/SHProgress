@@ -25,15 +25,9 @@ public class PlayerConsumeListener implements Listener {
         Player player = event.getPlayer();
         Material consumedItemType = event.getItem().getType();
 
-        for (ConfiguredAdvancement advConfig : manager.getConfiguredAdvancements()) {
-            if ("consume".equalsIgnoreCase(advConfig.getType())) {
-                String[] requiredItems = advConfig.getValue().split(",");
-                for (String itemName : requiredItems) {
-                    if (consumedItemType.name().equalsIgnoreCase(itemName.trim())) {
-                        dataManager.incrementProgression(player, advConfig, 1);
-                        break;
-                    }
-                }
+        for (ConfiguredAdvancement advConfig : manager.getByType("consume")) {
+            if (advConfig.matchesExact(consumedItemType.name())) {
+                dataManager.incrementProgression(player, advConfig, 1);
             }
         }
     }

@@ -25,6 +25,8 @@ public class PlayerDataManager {
     // Cache des joueurs en ligne ; maps concurrentes car la sauvegarde automatique est asynchrone
     private final Map<UUID, Map<String, Integer>> playerProgressCache = new ConcurrentHashMap<>();
     private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
+    // La sauvegarde auto (asynchrone) et celle de la déconnexion ne doivent jamais écrire le même fichier en même temps
+    private final Object saveLock = new Object();
 
     public PlayerDataManager(SHProgress plugin) {
         this.plugin = plugin;
@@ -64,16 +66,18 @@ public class PlayerDataManager {
         if (progressMap == null) {
             return; // Pas de données à sauvegarder
         }
-        dirty.remove(uuid);
+        synchronized (saveLock) {
+            dirty.remove(uuid);
 
-        File playerFile = new File(dataFolder, uuid.toString() + ".yml");
-        FileConfiguration config = new YamlConfiguration();
-        config.set("progress", new HashMap<>(progressMap));
+            File playerFile = new File(dataFolder, uuid.toString() + ".yml");
+            FileConfiguration config = new YamlConfiguration();
+            config.set("progress", new HashMap<>(progressMap));
 
-        try {
-            config.save(playerFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Impossible de sauvegarder les données du joueur " + uuid + " : " + e.getMessage());
+            try {
+                config.save(playerFile);
+            } catch (IOException e) {
+                plugin.getLogger().severe("Impossible de sauvegarder les données du joueur " + uuid + " : " + e.getMessage());
+            }
         }
     }
 
@@ -100,7 +104,9 @@ public class PlayerDataManager {
     }
 
     public void setProgression(UUID uuid, String advancementId, int newProgress) {
-        playerProgressCache.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(advancementId, newProgress);
+        // Jamais de carte vide à la place du fichier (joueur déjà connecté lors d'un rechargement du plugin)
+        loadIfAbsent(uuid);
+        playerProgressCache.get(uuid).put(advancementId, newProgress);
         dirty.add(uuid);
 
         // Mise à jour visuelle via l'API (toast et récompenses si le progrès est terminé)
@@ -116,6 +122,7 @@ public class PlayerDataManager {
      */
     public void incrementProgression(Player player, ConfiguredAdvancement advConfig, int amount) {
         UUID uuid = player.getUniqueId();
+        loadIfAbsent(uuid);
         if (!"root".equals(advConfig.getParentId())) {
             ConfiguredAdvancement parent = plugin.getAdvancementManager().getConfigured(advConfig.getTabId() + "/" + advConfig.getParentId());
             if (parent == null || !isCompleted(uuid, parent)) {

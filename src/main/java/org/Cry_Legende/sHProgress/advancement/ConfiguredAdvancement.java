@@ -100,6 +100,13 @@ public class ConfiguredAdvancement {
         return values.contains("ANY") || values.contains(name.toUpperCase(Locale.ROOT));
     }
 
+    /**
+     * Nom exact parmi les valeurs listées, sans le mot-clé "any" (blockplace, consume).
+     */
+    public boolean matchesExact(String name) {
+        return values.contains(name.toUpperCase(Locale.ROOT));
+    }
+
     // Getters
     public String getFullId() {
         return tabId + "/" + id;

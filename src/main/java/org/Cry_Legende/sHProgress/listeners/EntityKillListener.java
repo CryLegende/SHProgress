@@ -29,20 +29,10 @@ public class EntityKillListener implements Listener {
 
         EntityType killedEntityType = event.getEntityType();
 
-        for (ConfiguredAdvancement advConfig : manager.getConfiguredAdvancements()) {
-            if ("killentity".equalsIgnoreCase(advConfig.getType())) {
-                if ("any".equalsIgnoreCase(advConfig.getValue())) {
-                    dataManager.incrementProgression(player, advConfig, 1);
-                    continue;
-                }
-
-                String[] requiredEntities = advConfig.getValue().split(",");
-                for (String entityName : requiredEntities) {
-                    if (killedEntityType.name().equalsIgnoreCase(entityName.trim())) {
-                        dataManager.incrementProgression(player, advConfig, 1);
-                        break;
-                    }
-                }
+        // matches() gère le mot-clé "any"
+        for (ConfiguredAdvancement advConfig : manager.getByType("killentity")) {
+            if (advConfig.matches(killedEntityType.name())) {
+                dataManager.incrementProgression(player, advConfig, 1);
             }
         }
     }
