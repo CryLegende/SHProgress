@@ -278,7 +278,7 @@ advancements:
   harvestsweet_berries:
     type: consume
     value: SWEET_BERRIES
-    amount: 1
+    amount: 1000
     requirements:
       parent: { type: advancement, value: "tree.harvestbeetroot" }
     rewards:
@@ -295,7 +295,7 @@ advancements:
   harvestglow_berries:
     type: consume
     value: GLOW_BERRIES
-    amount: 1
+    amount: 1000
     requirements:
       parent: { type: advancement, value: "tree.harvestbeetroot" }
     rewards:
@@ -313,7 +313,7 @@ advancements:
   boxordinaire1:
     type: impossible
     value: none
-    amount: 1
+    amount: 1000
     rewards:
       message: { type: message, value: "&7&l« &dProgrès &8&l» &7La box ordinaire permet de progresser plus rapidement, votez pour gagner un maximum de clés pour rouvrir la box ordinaire !" }
     display:
