@@ -28,6 +28,14 @@ public class PlayerDataManager {
     // La sauvegarde auto (asynchrone) et celle de la déconnexion ne doivent jamais écrire le même fichier en même temps
     private final Object saveLock = new Object();
 
+    /**
+     * Progressions pas encore montrées au client, par joueur. UltimateAdvancementAPI renvoie tout l'onglet (~120 Kio
+     * envoyés, un critère par unité) à chaque mise à jour : on n'affiche donc une progression non terminée qu'au plus
+     * toutes les {@link #VISUAL_FLUSH_TICKS} ticks. Une progression terminée part tout de suite (toast, récompenses).
+     */
+    private final Map<UUID, Map<String, Integer>> pendingVisual = new ConcurrentHashMap<>();
+    private static final long VISUAL_FLUSH_TICKS = 20L * 10;
+
     public PlayerDataManager(SHProgress plugin) {
         this.plugin = plugin;
         this.dataFolder = new File(plugin.getDataFolder(), "playerdata");
@@ -35,6 +43,7 @@ public class PlayerDataManager {
             dataFolder.mkdirs();
         }
         startAutoSaveTask();
+        startVisualFlushTask();
     }
 
     // --- LOGIQUE DE CONNEXION / DÉCONNEXION ---
@@ -82,6 +91,8 @@ public class PlayerDataManager {
     }
 
     public void unloadPlayerData(UUID uuid) {
+        // Rien à montrer à un joueur parti : la progression enregistrée est repoussée à sa prochaine connexion
+        pendingVisual.remove(uuid);
         if (playerProgressCache.containsKey(uuid)) {
             savePlayerData(uuid);
             playerProgressCache.remove(uuid);
@@ -113,8 +124,43 @@ public class PlayerDataManager {
         Advancement advancement = plugin.getAdvancementManager().getAdvancement(advancementId);
         Player player = plugin.getServer().getPlayer(uuid);
         if (advancement != null && player != null) {
-            advancement.setProgression(player, newProgress);
+            ConfiguredAdvancement conf = plugin.getAdvancementManager().getConfigured(advancementId);
+            boolean completed = conf == null || newProgress >= conf.getAmount();
+            if (completed) {
+                Map<String, Integer> pending = pendingVisual.get(uuid);
+                if (pending != null) {
+                    pending.remove(advancementId);
+                }
+                advancement.setProgression(player, newProgress);
+            } else {
+                pendingVisual.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(advancementId, newProgress);
+            }
         }
+    }
+
+    /**
+     * Montre au client les progressions en attente. Sur le thread principal (appels UltimateAdvancementAPI) ; les
+     * progressions d'un même passage partent dans un seul paquet (UltimateAdvancementAPI les regroupe par tick).
+     */
+    private void startVisualFlushTask() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (UUID uuid : pendingVisual.keySet()) {
+                    Map<String, Integer> pending = pendingVisual.remove(uuid);
+                    Player player = plugin.getServer().getPlayer(uuid);
+                    if (pending == null || player == null) {
+                        continue;
+                    }
+                    for (Map.Entry<String, Integer> entry : pending.entrySet()) {
+                        Advancement advancement = plugin.getAdvancementManager().getAdvancement(entry.getKey());
+                        if (advancement != null) {
+                            advancement.setProgression(player, entry.getValue());
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, VISUAL_FLUSH_TICKS, VISUAL_FLUSH_TICKS);
     }
 
     /**
