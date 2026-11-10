@@ -5,7 +5,6 @@ import org.Cry_Legende.sHProgress.advancement.AdvancementManager;
 import org.Cry_Legende.sHProgress.advancement.ConfiguredAdvancement;
 import org.Cry_Legende.sHProgress.data.PlayerDataManager;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,8 +19,6 @@ import java.util.List;
 
 public class CommandManager implements CommandExecutor, TabCompleter {
 
-    private static final String PREFIX = "&7&l« &dProgrès &8&l» &7";
-
     private final SHProgress plugin;
     private final AdvancementManager advancementManager;
     private final PlayerDataManager dataManager;
@@ -35,7 +32,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (args.length == 0) {
-            send(sender, "Utilisation : &e/" + label + " <progress|reload>");
+            send(sender, "usage", "%label%", label);
             return true;
         }
         String subCommand = args[0].toLowerCase();
@@ -44,32 +41,57 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 return handleProgress(sender, args);
             case "reload":
                 return handleReload(sender);
+            case "import":
+                return handleImport(sender);
             default:
-                send(sender, "Sous-commande &cinconnue&7. Utilisation : &e/" + label + " <progress|reload>");
+                send(sender, "unknown-subcommand", "%label%", label);
                 return true;
         }
     }
 
     private boolean handleReload(CommandSender sender) {
         if (!sender.hasPermission("shprogress.admin.reload")) {
-            send(sender, "Vous n'avez pas la &cpermission&7.");
+            send(sender, "no-permission");
             return true;
         }
 
+        plugin.reloadConfig();
+        plugin.getMessages().load();
         advancementManager.loadAdvancementTrees();
         advancementManager.syncOnlinePlayers();
 
-        send(sender, "Configuration &arechargée&7, progression des joueurs connectés resynchronisée.");
+        send(sender, "reloaded");
+        return true;
+    }
+
+    private boolean handleImport(CommandSender sender) {
+        if (!sender.hasPermission("shprogress.admin.import")) {
+            send(sender, "no-permission");
+            return true;
+        }
+        boolean started = dataManager.importToNetwork(new PlayerDataManager.ImportListener() {
+            @Override
+            public void done(int players, int rows, int rewards) {
+                send(sender, "import-done", "%players%", String.valueOf(players), "%rows%", String.valueOf(rows),
+                    "%rewards%", String.valueOf(rewards));
+            }
+
+            @Override
+            public void failed(String error) {
+                send(sender, "import-failed", "%error%", error);
+            }
+        });
+        send(sender, started ? "import-started" : "import-inactive");
         return true;
     }
 
     private boolean handleProgress(CommandSender sender, String[] args) {
         if (!sender.hasPermission("shprogress.admin.progress")) {
-            send(sender, "Vous n'avez pas la &cpermission&7.");
+            send(sender, "no-permission");
             return true;
         }
         if (args.length != 4) {
-            send(sender, "Utilisation : &e/shprogress progress <joueur> <arbre/id_progrès> <quantité>");
+            send(sender, "progress-usage");
             return true;
         }
         // Depuis la console (SHCrates à chaque box ouverte), pas de message de retour
@@ -79,7 +101,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     private boolean grant(CommandSender sender, String playerName, String advancementId, String rawAmount, boolean feedback) {
         Player target = Bukkit.getPlayerExact(playerName);
         if (target == null) {
-            send(sender, "Le joueur &e" + playerName + " &7n'est pas &cen ligne&7.");
+            send(sender, "player-offline", "%player%", playerName);
             return true;
         }
         ConfiguredAdvancement advConfig = advancementManager.getConfiguredAdvancements().stream()
@@ -87,7 +109,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             .findFirst().orElse(null);
 
         if (advConfig == null) {
-            send(sender, "Le progrès &e" + advancementId + " &cn'existe pas&7.");
+            send(sender, "unknown-advancement", "%advancement%", advancementId);
             return true;
         }
 
@@ -95,7 +117,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         try {
             amount = Integer.parseInt(rawAmount);
         } catch (NumberFormatException e) {
-            send(sender, "La quantité doit être un &cnombre entier&7.");
+            send(sender, "invalid-amount");
             return true;
         }
 
@@ -104,16 +126,15 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         int after = dataManager.getProgression(target.getUniqueId(), advConfig.getFullId());
 
         if (feedback) {
-            String state = after > before ? "&a+" + (after - before) + " &7pour"
-                : after >= advConfig.getAmount() ? "&eDéjà terminé &7pour" : "&6Verrouillé &7(progrès parent non terminé) pour";
-            send(sender, state + " &e" + target.getName() + " &7sur &e" + advConfig.getFullId()
-                + " &7(" + after + "/" + advConfig.getAmount() + ").");
+            String key = after > before ? "progress-gained" : after >= advConfig.getAmount() ? "progress-already-done" : "progress-locked";
+            send(sender, key, "%gained%", String.valueOf(after - before), "%player%", target.getName(),
+                "%advancement%", advConfig.getFullId(), "%progress%", String.valueOf(after), "%amount%", String.valueOf(advConfig.getAmount()));
         }
         return true;
     }
 
-    private static void send(CommandSender sender, String message) {
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', PREFIX + message));
+    private void send(CommandSender sender, String key, String... replacements) {
+        sender.sendMessage(plugin.getMessages().get(key, replacements));
     }
 
     @Override
@@ -122,6 +143,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             if (sender.hasPermission("shprogress.admin.progress")) completions.add("progress");
             if (sender.hasPermission("shprogress.admin.reload")) completions.add("reload");
+            if (sender.hasPermission("shprogress.admin.import")) completions.add("import");
             return StringUtil.copyPartialMatches(args[0], completions, new ArrayList<>());
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("progress")) {

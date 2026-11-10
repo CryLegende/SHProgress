@@ -1,0 +1,41 @@
+# ======================================================================== #
+#                      SHProgress - Fichier de Messages                    #
+# ======================================================================== #
+#
+# Les codes couleur utilisent '&'.
+#
+# Variables :
+#   %label%        Commande tapée (usage, unknown-subcommand).
+#   %player%       Pseudo du joueur visé.
+#   %advancement%  Identifiant du progrès (arbre/progrès).
+#   %gained%       Quantité ajoutée.
+#   %progress%     Progression du joueur après l'ajout.
+#   %amount%       Quantité nécessaire pour terminer le progrès.
+#   %players%      Joueurs ayant au moins un progrès copié (import-done).
+#   %rows%         Progressions copiées (import-done).
+#   %rewards%      Récompenses marquées comme déjà données (import-done).
+#   %error%        Cause de l'échec (import-failed).
+#
+# ======================================================================== #
+
+# Début de tous les messages des commandes
+prefix: "&7&l« &dProgrès &8&l» &7"
+
+usage: "Utilisation : &e/%label% <progress|reload>"
+unknown-subcommand: "Sous-commande &cinconnue&7. Utilisation : &e/%label% <progress|reload>"
+no-permission: "Vous n'avez pas la &cpermission&7."
+reloaded: "Configuration &arechargée&7, progression des joueurs connectés resynchronisée."
+
+progress-usage: "Utilisation : &e/shprogress progress <joueur> <arbre/id_progrès> <quantité>"
+player-offline: "Le joueur &e%player% &7n'est pas &cen ligne&7."
+unknown-advancement: "Le progrès &e%advancement% &cn'existe pas&7."
+invalid-amount: "La quantité doit être un &cnombre entier&7."
+progress-gained: "&a+%gained% &7pour &e%player% &7sur &e%advancement% &7(%progress%/%amount%)."
+progress-already-done: "&eDéjà terminé &7pour &e%player% &7sur &e%advancement% &7(%progress%/%amount%)."
+progress-locked: "&6Verrouillé &7(progrès parent non terminé) pour &e%player% &7sur &e%advancement% &7(%progress%/%amount%)."
+
+# Copie des fichiers playerdata/ dans la base du réseau (/shprogress import)
+import-inactive: "L'importation demande &cSHNetwork&7 et &creseau.actif: true&7 dans config.yml."
+import-started: "Importation des fichiers de progression dans la base du réseau..."
+import-done: "Importation &aterminée&7 : &e%rows% &7progressions de &e%players% &7joueurs copiées, &e%rewards% &7récompenses marquées comme données."
+import-failed: "Importation &cinterrompue&7 : %error%"

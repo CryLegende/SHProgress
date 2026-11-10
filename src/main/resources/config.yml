@@ -1,0 +1,41 @@
+# ======================================================================== #
+#                      SHProgress - Configuration                          #
+# ======================================================================== #
+#
+# Plugin : arbres de progrès personnalisés (onglet des progrès, touche L) fondés sur UltimateAdvancementAPI.
+# Chaque fichier de plugins/SHProgress/trees/ est un onglet ; default_tree.yml et documentation.yml
+# décrivent tous les types d'objectifs, les récompenses et l'affichage. La progression de chaque joueur est
+# dans playerdata/<uuid>.yml, ou dans la base du réseau avec SHNetwork (section 'reseau' ci-dessous).
+#
+# Commandes (alias /shp) :
+#   /shprogress progress <joueur> <arbre/progrès> <quantité>   Fait progresser un joueur connecté.   shprogress.admin.progress
+#   /shprogress reload                                          Recharge les arbres.                  shprogress.admin.reload
+#   /shprogress import                                          Avec SHNetwork : copie les fichiers   shprogress.admin.import
+#                                                               playerdata/ dans la base du réseau,
+#                                                               sans toucher aux progressions déjà présentes.
+#
+# Les textes des commandes sont dans 'messages.yml'.
+#
+# ======================================================================== #
+
+# Plusieurs serveurs Opale avec SHNetwork : un joueur garde sa progression en changeant de serveur et une
+# récompense de progrès n'est donnée qu'une fois pour tout le réseau. Les compteurs sont gardés en mémoire
+# pendant la partie et ajoutés à la base (progression = progression + gain) à intervalle régulier et au départ
+# du joueur, jamais en écrasant la valeur lue à la connexion. La récompense est réservée en base : le serveur
+# qui l'obtient la donne. Sans SHNetwork, rien de tout cela n'est chargé et tout reste dans playerdata/.
+# Demande un redémarrage : actif, sauvegarde-secondes, base-de-donnees. Se recharge avec /shprogress reload : attente-depart-secondes.
+reseau:
+  actif: true
+  # Temps maximal, en secondes, pendant lequel un joueur qui arrive attend que le serveur qu'il quitte ait fini
+  # d'écrire sa progression avant que celle-ci soit lue en base
+  attente-depart-secondes: 30
+  # Intervalle, en secondes, entre deux écritures des gains en attente dans la base
+  sauvegarde-secondes: 60
+  # Base partagée par tous les serveurs : tables shprogress_progress (uuid, advancement, progress)
+  # et shprogress_rewards (uuid, advancement, claimed_at)
+  base-de-donnees:
+    url: "jdbc:mariadb://127.0.0.1:3306/bo_net"
+    utilisateur: shprogress
+    mot-de-passe: CHANGE_ME
+    # Délai maximal de connexion et de réponse de la base, en millisecondes
+    delai-ms: 3000

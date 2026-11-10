@@ -3,6 +3,7 @@ package org.Cry_Legende.sHProgress.data;
 import com.fren_gor.ultimateAdvancementAPI.advancement.Advancement;
 import org.Cry_Legende.sHProgress.SHProgress;
 import org.Cry_Legende.sHProgress.advancement.ConfiguredAdvancement;
+import org.Cry_Legende.sHProgress.network.NetworkProgress;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -11,6 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +21,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerDataManager {
+
+    /** Suite d'une importation vers la base du réseau, rappelée sur le fil principal. */
+    public interface ImportListener {
+
+        void done(int players, int rows, int rewards);
+
+        void failed(String error);
+    }
 
     private final SHProgress plugin;
     private final File dataFolder;
@@ -36,6 +46,9 @@ public class PlayerDataManager {
     private final Map<UUID, Map<String, Integer>> pendingVisual = new ConcurrentHashMap<>();
     private static final long VISUAL_FLUSH_TICKS = 20L * 10;
 
+    // Non nul seulement avec SHNetwork : progression en base partagée, lue à l'arrivée du joueur
+    private NetworkProgress net;
+
     public PlayerDataManager(SHProgress plugin) {
         this.plugin = plugin;
         this.dataFolder = new File(plugin.getDataFolder(), "playerdata");
@@ -47,6 +60,35 @@ public class PlayerDataManager {
     }
 
     // --- LOGIQUE DE CONNEXION / DÉCONNEXION ---
+
+    /** Passe en mode réseau : la progression vient de la base, plus des fichiers. */
+    public void enableNetwork(NetworkProgress network) {
+        this.net = network;
+    }
+
+    /** Connexion d'un joueur : son fichier est lu tout de suite, ou sa progression en base après la barrière de passage. */
+    public void onJoin(UUID uuid) {
+        if (net == null) {
+            loadPlayerData(uuid);
+            return;
+        }
+        Duration wait = Duration.ofSeconds(Math.max(0, plugin.getConfig().getInt("reseau.attente-depart-secondes", 30)));
+        net.load(uuid, wait, loaded -> applyLoaded(uuid, loaded));
+    }
+
+    /** Progression lue en base (fil principal) : mise en mémoire et poussée vers le client si le joueur est toujours là. */
+    private void applyLoaded(UUID uuid, Map<String, Integer> loaded) {
+        Player player = plugin.getServer().getPlayer(uuid);
+        if (player == null) {
+            return; // parti pendant la lecture
+        }
+        playerProgressCache.put(uuid, new ConcurrentHashMap<>(loaded));
+        plugin.getAdvancementManager().syncAwaiting(player);
+    }
+
+    public boolean isLoaded(UUID uuid) {
+        return playerProgressCache.containsKey(uuid);
+    }
 
     public void loadPlayerData(UUID uuid) {
         File playerFile = new File(dataFolder, uuid.toString() + ".yml");
@@ -64,10 +106,21 @@ public class PlayerDataManager {
         playerProgressCache.put(uuid, progressMap);
     }
 
-    public void loadIfAbsent(UUID uuid) {
-        if (!playerProgressCache.containsKey(uuid)) {
-            loadPlayerData(uuid);
+    /**
+     * Charge le fichier du joueur s'il n'est pas en mémoire. Avec SHNetwork, la lecture en base se fait à part
+     * (jamais de SQL sur le fil principal) : rien n'est chargé ici et la réponse est fausse tant qu'elle n'est pas finie.
+     *
+     * @return vrai si la progression du joueur est en mémoire
+     */
+    public boolean loadIfAbsent(UUID uuid) {
+        if (playerProgressCache.containsKey(uuid)) {
+            return true;
         }
+        if (net != null) {
+            return false;
+        }
+        loadPlayerData(uuid);
+        return true;
     }
 
     public void savePlayerData(UUID uuid) {
@@ -93,6 +146,13 @@ public class PlayerDataManager {
     public void unloadPlayerData(UUID uuid) {
         // Rien à montrer à un joueur parti : la progression enregistrée est repoussée à sa prochaine connexion
         pendingVisual.remove(uuid);
+        plugin.getAdvancementManager().forgetAwaiting(uuid);
+        if (net != null) {
+            // les gains partent en base ; SHNetwork attend cette écriture avant de laisser le joueur arriver ailleurs
+            net.depart(uuid);
+            playerProgressCache.remove(uuid);
+            return;
+        }
         if (playerProgressCache.containsKey(uuid)) {
             savePlayerData(uuid);
             playerProgressCache.remove(uuid);
@@ -100,7 +160,39 @@ public class PlayerDataManager {
     }
 
     public void saveAll() {
+        if (net != null) {
+            net.flushAll();
+            return;
+        }
         playerProgressCache.keySet().forEach(this::savePlayerData);
+    }
+
+    /**
+     * Récompense d'un progrès terminé. Sans SHNetwork elle est donnée tout de suite ; avec lui, le serveur qui
+     * réserve la récompense en base la donne, les autres non.
+     */
+    public void giveReward(Player player, String advancementId, Runnable payout) {
+        if (net == null) {
+            payout.run();
+            return;
+        }
+        net.claimReward(player.getUniqueId(), advancementId, player.getName(), payout);
+    }
+
+    /**
+     * Copie les fichiers playerdata/ dans la base du réseau (sans toucher aux progressions déjà présentes).
+     *
+     * @return faux si le mode réseau n'est pas actif
+     */
+    public boolean importToNetwork(ImportListener listener) {
+        if (net == null) {
+            return false;
+        }
+        net.importFiles(dataFolder, (id, value) -> {
+            ConfiguredAdvancement conf = plugin.getAdvancementManager().getConfigured(id);
+            return conf != null && value >= conf.getAmount();
+        }, listener);
+        return true;
     }
 
     // --- GESTION DE LA PROGRESSION ---
@@ -116,9 +208,13 @@ public class PlayerDataManager {
 
     public void setProgression(UUID uuid, String advancementId, int newProgress) {
         // Jamais de carte vide à la place du fichier (joueur déjà connecté lors d'un rechargement du plugin)
-        loadIfAbsent(uuid);
+        if (!loadIfAbsent(uuid)) {
+            return;
+        }
         playerProgressCache.get(uuid).put(advancementId, newProgress);
-        dirty.add(uuid);
+        if (net == null) {
+            dirty.add(uuid);
+        }
 
         // Mise à jour visuelle via l'API (toast et récompenses si le progrès est terminé)
         Advancement advancement = plugin.getAdvancementManager().getAdvancement(advancementId);
@@ -168,7 +264,9 @@ public class PlayerDataManager {
      */
     public void incrementProgression(Player player, ConfiguredAdvancement advConfig, int amount) {
         UUID uuid = player.getUniqueId();
-        loadIfAbsent(uuid);
+        if (!loadIfAbsent(uuid)) {
+            return; // progression pas encore lue en base : rien ne compte avant son arrivée
+        }
         if (!"root".equals(advConfig.getParentId())) {
             ConfiguredAdvancement parent = plugin.getAdvancementManager().getConfigured(advConfig.getTabId() + "/" + advConfig.getParentId());
             if (parent == null || !isCompleted(uuid, parent)) {
@@ -183,7 +281,11 @@ public class PlayerDataManager {
             return; // Déjà complété
         }
 
-        setProgression(uuid, fullId, Math.min(currentProgress + amount, maxProgress));
+        int next = Math.min(currentProgress + amount, maxProgress);
+        if (net != null) {
+            net.recordGain(uuid, fullId, next - currentProgress, maxProgress);
+        }
+        setProgression(uuid, fullId, next);
     }
 
     // --- MIGRATION DEPUIS CUSTOMADVANCEMENTS ---

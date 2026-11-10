@@ -20,6 +20,7 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AdvancementManager {
 
@@ -30,6 +31,8 @@ public class AdvancementManager {
     // Progrès par type d'objectif (blockbreak, killentity...) pour ne pas tout parcourir à chaque événement
     private final Map<String, List<ConfiguredAdvancement>> byType = new HashMap<>();
     private final Map<String, RootAdvancement> roots = new HashMap<>();
+    // Avec SHNetwork : onglets que le client a fini de charger avant que la progression soit lue en base
+    private final Map<UUID, Set<String>> awaitingData = new ConcurrentHashMap<>();
 
     public AdvancementManager(SHProgress plugin, UltimateAdvancementAPI api) {
         this.plugin = plugin;
@@ -140,9 +143,12 @@ public class AdvancementManager {
 
                     @Override
                     public void giveReward(Player player) {
-                        confAdv.getRewardCommands().forEach(cmd ->
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("%player%", player.getName())));
-                        confAdv.getRewardMessages().forEach(msg -> player.sendMessage(color(msg)));
+                        // Avec SHNetwork, la récompense n'est donnée que si ce serveur la réserve en base
+                        plugin.getPlayerDataManager().giveReward(player, confAdv.getFullId(), () -> {
+                            confAdv.getRewardCommands().forEach(cmd ->
+                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd.replace("%player%", player.getName())));
+                            confAdv.getRewardMessages().forEach(msg -> player.sendMessage(color(msg)));
+                        });
                     }
                 };
                 childAdvancements.add(advancement);
@@ -212,7 +218,17 @@ public class AdvancementManager {
         root.grant(player, false);
         PlayerDataManager data = plugin.getPlayerDataManager();
         UUID uuid = player.getUniqueId();
-        data.loadIfAbsent(uuid);
+        if (!data.loadIfAbsent(uuid)) {
+            // Progression pas encore lue en base : elle est poussée à son arrivée (syncAwaiting)
+            awaitingData.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(tabId);
+            if (!data.isLoaded(uuid)) {
+                return;
+            }
+            awaitingData.computeIfPresent(uuid, (id, tabs) -> {
+                tabs.remove(tabId);
+                return tabs.isEmpty() ? null : tabs;
+            });
+        }
         for (ConfiguredAdvancement conf : configuredAdvancements.values()) {
             Advancement adv = registeredAdvancements.get(conf.getFullId());
             if (adv == null || !conf.getTabId().equals(tabId)) {
@@ -223,6 +239,25 @@ public class AdvancementManager {
                 adv.setProgression(player, target, false);
             }
         }
+    }
+
+    /** La progression du joueur vient d'être lue en base : les onglets déjà chargés par son client se synchronisent. */
+    public void syncAwaiting(Player player) {
+        Set<String> tabs = awaitingData.remove(player.getUniqueId());
+        if (tabs == null) {
+            return;
+        }
+        for (String tabId : tabs) {
+            try {
+                syncPlayer(player, tabId);
+            } catch (RuntimeException e) {
+                plugin.getLogger().warning("Synchronisation impossible pour " + player.getName() + " : " + e.getMessage());
+            }
+        }
+    }
+
+    public void forgetAwaiting(UUID uuid) {
+        awaitingData.remove(uuid);
     }
 
     /**

@@ -5,11 +5,18 @@ api-version: '1.21'
 author: Cry_Legende
 description: Un plugin pour créer des arbres de progrès personnalisés.
 depend: [UltimateAdvancementAPI]
+# SHNetwork est facultatif : sans lui, la progression reste dans les fichiers de ce serveur.
+softdepend: [SHNetwork]
+# Chargées par Paper dans le classloader du plugin : le serveur n'embarque que les pilotes MySQL et SQLite.
+# Seul le mode réseau (progression en MariaDB) s'en sert.
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
+  - org.mariadb.jdbc:mariadb-java-client:3.4.1
 
 commands:
   shprogress:
     description: Commande principale pour gérer le plugin SHProgress.
-    usage: /shprogress <progress|reload>
+    usage: /shprogress <progress|reload|import>
     aliases: [shp]
 
 permissions:
@@ -18,4 +25,7 @@ permissions:
     default: op
   shprogress.admin.reload:
     description: Permet de recharger la configuration du plugin.
+    default: op
+  shprogress.admin.import:
+    description: Permet de copier la progression des fichiers de ce serveur dans la base du réseau.
     default: op

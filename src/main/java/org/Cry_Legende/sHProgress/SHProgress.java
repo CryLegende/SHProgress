@@ -6,6 +6,12 @@ import org.Cry_Legende.sHProgress.advancement.AdvancementManager;
 import org.Cry_Legende.sHProgress.command.CommandManager;
 import org.Cry_Legende.sHProgress.data.PlayerDataManager;
 import org.Cry_Legende.sHProgress.listeners.*;
+import org.Cry_Legende.sHProgress.network.NetBus;
+import org.Cry_Legende.sHProgress.network.NetworkProgress;
+import org.Cry_Legende.sHProgress.network.ProgressDatabase;
+import org.Cry_Legende.sHProgress.network.ShNetworkBus;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -13,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.sql.SQLException;
+import java.util.logging.Level;
 
 public final class SHProgress extends JavaPlugin {
 
@@ -21,10 +29,15 @@ public final class SHProgress extends JavaPlugin {
     private UltimateAdvancementAPI api;
     private AdvancementManager advancementManager;
     private PlayerDataManager playerDataManager;
+    private Messages messages;
+    // Non nul seulement avec SHNetwork : progression en base partagée entre les serveurs
+    private NetworkProgress network;
 
     @Override
     public void onEnable() {
         instance = this;
+        saveDefaultConfig();
+        this.messages = new Messages(this);
 
         // Étape 1 : Vérifier la présence de l'API
         if (getServer().getPluginManager().getPlugin("UltimateAdvancementAPI") == null) {
@@ -57,6 +70,9 @@ public final class SHProgress extends JavaPlugin {
         this.advancementManager = new AdvancementManager(this, api);
         this.advancementManager.loadAdvancementTrees();
 
+        // Étape 5 bis : Passer en mode réseau si SHNetwork est là
+        enableNetwork();
+
         // Étape 6 : Reprendre la progression des joueurs de CustomAdvancements (une seule fois)
         playerDataManager.migrateFromCustomAdvancements();
 
@@ -85,11 +101,58 @@ public final class SHProgress extends JavaPlugin {
             getLogger().info("Sauvegarde finale des données de progression...");
             playerDataManager.saveAll();
         }
+        if (network != null) {
+            network.close();
+        }
 
         if (this.advancementMain != null) {
             this.advancementMain.disable();
         }
         getLogger().info("SHProgress a été désactivé.");
+    }
+
+    /**
+     * Passe en mode réseau si SHNetwork est installé et 'reseau.actif' est vrai. Les classes qui touchent à SHNetwork
+     * ne sont résolues qu'ici : sans lui, rien n'est chargé et le plugin garde son fonctionnement d'origine.
+     */
+    private void enableNetwork() {
+        if (!getConfig().getBoolean("reseau.actif", true)) {
+            return;
+        }
+        if (!Bukkit.getPluginManager().isPluginEnabled("SHNetwork")) {
+            return;
+        }
+        ProgressDatabase db = null;
+        try {
+            NetBus bus = ShNetworkBus.open();
+            db = new ProgressDatabase(
+                getConfig().getString("reseau.base-de-donnees.url"),
+                getConfig().getString("reseau.base-de-donnees.utilisateur"),
+                getConfig().getString("reseau.base-de-donnees.mot-de-passe"),
+                Math.max(250, getConfig().getInt("reseau.base-de-donnees.delai-ms", 3000)));
+            try {
+                db.createTables();
+            } catch (SQLException e) {
+                getLogger().log(Level.WARNING, "Tables de la progression non vérifiées (base injoignable ou droits manquants) : " + e.getMessage());
+            }
+            NetworkProgress progress = new NetworkProgress(this, bus, db);
+            network = progress;
+            playerDataManager.enableNetwork(progress);
+            long flushTicks = Math.max(1, getConfig().getInt("reseau.sauvegarde-secondes", 60)) * 20L;
+            progress.start(flushTicks);
+            // joueurs déjà connectés (rechargement du plugin) : leur progression est lue en base
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                playerDataManager.onJoin(player.getUniqueId());
+            }
+            getLogger().info("SHNetwork détecté : progression des joueurs en base, partagée entre les serveurs.");
+        } catch (RuntimeException | LinkageError e) {
+            network = null;
+            playerDataManager.enableNetwork(null);
+            if (db != null) {
+                db.close();
+            }
+            getLogger().log(Level.SEVERE, "SHNetwork présent mais inutilisable, progression dans les fichiers de ce serveur : " + e);
+        }
     }
 
     /**
@@ -140,5 +203,9 @@ public final class SHProgress extends JavaPlugin {
 
     public PlayerDataManager getPlayerDataManager() {
         return playerDataManager;
+    }
+
+    public Messages getMessages() {
+        return messages;
     }
 }

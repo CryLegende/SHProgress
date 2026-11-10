@@ -16,8 +16,8 @@ public class PlayerConnectionListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        // Charge les données du joueur depuis son fichier .yml
-        dataManager.loadPlayerData(event.getPlayer().getUniqueId());
+        // Charge les données du joueur depuis son fichier .yml (ou depuis la base du réseau avec SHNetwork)
+        dataManager.onJoin(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
