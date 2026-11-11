@@ -312,6 +312,11 @@ public class AdvancementManager {
         return byType.getOrDefault(type, List.of());
     }
 
+    /** Nombre d'arbres (onglets) chargés. */
+    public int getTreeCount() {
+        return roots.size();
+    }
+
     public Collection<ConfiguredAdvancement> getConfiguredAdvancements() {
         return configuredAdvancements.values();
     }

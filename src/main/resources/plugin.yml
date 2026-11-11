@@ -16,16 +16,27 @@ libraries:
 commands:
   shprogress:
     description: Commande principale pour gérer le plugin SHProgress.
-    usage: /shprogress <progress|reload|import>
+    usage: /shprogress <progress|reload|import|info>
     aliases: [shp]
 
 permissions:
+  shprogress.admin:
+    description: Toute l'administration de SHProgress.
+    default: op
+    children:
+      shprogress.admin.progress: true
+      shprogress.admin.reload: true
+      shprogress.admin.import: true
+      shprogress.admin.info: true
   shprogress.admin.progress:
     description: Permet de faire progresser un joueur dans un objectif.
     default: op
   shprogress.admin.reload:
-    description: Permet de recharger la configuration du plugin.
+    description: Permet de recharger config.yml, messages.yml et les arbres.
     default: op
   shprogress.admin.import:
     description: Permet de copier la progression des fichiers de ce serveur dans la base du réseau.
+    default: op
+  shprogress.admin.info:
+    description: Permet de consulter la progression d'un joueur.
     default: op

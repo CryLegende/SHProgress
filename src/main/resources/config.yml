@@ -9,10 +9,21 @@
 #
 # Commandes (alias /shp) :
 #   /shprogress progress <joueur> <arbre/progrès> <quantité>   Fait progresser un joueur connecté.   shprogress.admin.progress
-#   /shprogress reload                                          Recharge les arbres.                  shprogress.admin.reload
+#   /shprogress reload                                          Recharge config.yml, messages.yml et  shprogress.admin.reload
+#                                                               tous les arbres de trees/. Un fichier
+#                                                               illisible annule le rechargement : la
+#                                                               configuration, les textes et les arbres
+#                                                               actuels restent actifs et le fichier
+#                                                               fautif est indiqué. playerdata/ et la
+#                                                               base ne sont pas touchés.
 #   /shprogress import                                          Avec SHNetwork : copie les fichiers   shprogress.admin.import
 #                                                               playerdata/ dans la base du réseau,
 #                                                               sans toucher aux progressions déjà présentes.
+#   /shprogress info <joueur>                                   Progrès terminés par arbre et progrès  shprogress.admin.info
+#                                                               les plus avancés d'un joueur (connecté, ou
+#                                                               hors ligne sans SHNetwork).
+#
+# shprogress.admin donne toutes les permissions ci-dessus (op par défaut) ; chacune se donne aussi séparément.
 #
 # Les textes des commandes sont dans 'messages.yml'.
 #

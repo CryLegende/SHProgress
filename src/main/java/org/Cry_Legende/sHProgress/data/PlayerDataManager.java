@@ -202,6 +202,36 @@ public class PlayerDataManager {
         return progress == null ? 0 : progress.getOrDefault(advancementId, 0);
     }
 
+    /** Vrai en mode réseau (progression en base, plus de fichiers). */
+    public boolean isNetwork() {
+        return net != null;
+    }
+
+    /** Copie des compteurs d'un joueur en mémoire, ou null si ses données ne sont pas encore chargées. */
+    public Map<String, Integer> snapshot(UUID uuid) {
+        Map<String, Integer> progress = playerProgressCache.get(uuid);
+        return progress == null ? null : new java.util.HashMap<>(progress);
+    }
+
+    /**
+     * Compteurs d'un joueur lus dans son fichier, sans les garder en mémoire ; null s'il n'a pas de fichier.
+     * À appeler hors du fil principal.
+     */
+    public Map<String, Integer> readFile(UUID uuid) {
+        File playerFile = new File(dataFolder, uuid.toString() + ".yml");
+        if (!playerFile.exists()) {
+            return null;
+        }
+        Map<String, Integer> progressMap = new java.util.HashMap<>();
+        ConfigurationSection progressSection = YamlConfiguration.loadConfiguration(playerFile).getConfigurationSection("progress");
+        if (progressSection != null) {
+            for (String key : progressSection.getKeys(false)) {
+                progressMap.put(key, progressSection.getInt(key));
+            }
+        }
+        return progressMap;
+    }
+
     public boolean isCompleted(UUID uuid, ConfiguredAdvancement advConfig) {
         return getProgression(uuid, advConfig.getFullId()) >= advConfig.getAmount();
     }

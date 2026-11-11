@@ -2,39 +2,33 @@ package org.Cry_Legende.sHProgress;
 
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
 /** Textes de messages.yml. Un messages.yml plus ancien reprend les textes manquants du fichier du jar. */
 public final class Messages {
 
     private final JavaPlugin plugin;
-    private FileConfiguration messages;
+    private volatile FileConfiguration messages;
 
     public Messages(JavaPlugin plugin) {
         this.plugin = plugin;
         load();
     }
 
+    /** Relit messages.yml. Un fichier illisible n'empêche pas le démarrage : les textes du jar servent jusqu'au prochain reload. */
     public void load() {
-        File file = new File(plugin.getDataFolder(), "messages.yml");
-        if (!file.exists()) {
-            plugin.saveResource("messages.yml", false);
+        try {
+            messages = ConfigFiles.read(plugin, "messages.yml");
+        } catch (ConfigFiles.ReadError e) {
+            plugin.getLogger().severe(e.file() + " illisible, textes du jar utilisés : " + e.detail());
+            messages = ConfigFiles.bundled(plugin, "messages.yml");
         }
-        messages = YamlConfiguration.loadConfiguration(file);
-        try (InputStream in = plugin.getResource("messages.yml")) {
-            if (in != null) {
-                messages.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8)));
-            }
-        } catch (IOException e) {
-            plugin.getLogger().warning("messages.yml par défaut illisible : " + e.getMessage());
-        }
+    }
+
+    /** Remplace les textes par un messages.yml déjà lu sans erreur. */
+    public void apply(FileConfiguration loaded) {
+        messages = loaded;
     }
 
     /**
@@ -43,10 +37,15 @@ public final class Messages {
      * @param replacements paires variable, valeur (par exemple {@code "%player%", nom})
      */
     public String get(String key, String... replacements) {
-        String text = messages.getString(key, "");
+        // getString(clé) lit le fichier du serveur puis celui du jar ; getString(clé, défaut) ignorerait celui du jar
+        String text = messages.getString(key);
+        if (text == null) {
+            text = "";
+        }
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             text = text.replace(replacements[i], replacements[i + 1]);
         }
-        return ChatColor.translateAlternateColorCodes('&', messages.getString("prefix", "") + text);
+        String prefix = messages.getString("prefix");
+        return ChatColor.translateAlternateColorCodes('&', (prefix == null ? "" : prefix) + text);
     }
 }

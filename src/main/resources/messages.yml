@@ -5,7 +5,13 @@
 # Les codes couleur utilisent '&'.
 #
 # Variables :
-#   %label%        Commande tapée (usage, unknown-subcommand).
+#   %subcommands%  Sous-commandes que l'expéditeur peut utiliser (usage, unknown-subcommand).
+#   %file%         Fichier illisible (reload-error).
+#   %trees%        Arbres chargés (reloaded).
+#   %advancements% Progrès chargés (reloaded).
+#   %tree%         Arbre (info-tree).
+#   %done%         Progrès terminés (info-header, info-tree).
+#   %total%        Progrès au total (info-header, info-tree).
 #   %player%       Pseudo du joueur visé.
 #   %advancement%  Identifiant du progrès (arbre/progrès).
 #   %gained%       Quantité ajoutée.
@@ -21,10 +27,11 @@
 # Début de tous les messages des commandes
 prefix: "&7&l« &dProgrès &8&l» &7"
 
-usage: "Utilisation : &e/%label% <progress|reload>"
-unknown-subcommand: "Sous-commande &cinconnue&7. Utilisation : &e/%label% <progress|reload>"
+usage: "Utilisation : &e/shprogress <%subcommands%>"
+unknown-subcommand: "Sous-commande &cinconnue&7. Utilisation : &e/shprogress <%subcommands%>"
 no-permission: "Vous n'avez pas la &cpermission&7."
-reloaded: "Configuration &arechargée&7, progression des joueurs connectés resynchronisée."
+reloaded: "Configuration &arechargée&7 (&e%trees% &7arbres, &e%advancements% &7progrès), progression des joueurs connectés resynchronisée."
+reload-error: "Rechargement &cannulé&7, la configuration, les textes et les arbres actuels restent actifs. &f%file% &7: &c%error%"
 
 progress-usage: "Utilisation : &e/shprogress progress <joueur> <arbre/id_progrès> <quantité>"
 player-offline: "Le joueur &e%player% &7n'est pas &cen ligne&7."
@@ -39,3 +46,12 @@ import-inactive: "L'importation demande &cSHNetwork&7 et &creseau.actif: true&7 
 import-started: "Importation des fichiers de progression dans la base du réseau..."
 import-done: "Importation &aterminée&7 : &e%rows% &7progressions de &e%players% &7joueurs copiées, &e%rewards% &7récompenses marquées comme données."
 import-failed: "Importation &cinterrompue&7 : %error%"
+
+# Progression d'un joueur (/shprogress info)
+info-usage: "Utilisation : &e/shprogress info <joueur>"
+info-header: "Progrès de &e%player% &7: &a%done%&7/&a%total% &7terminés."
+info-tree: "&8- &f%tree% &7: &a%done%&7/&a%total%"
+info-current: "&8  en cours : &e%advancement% &7(%progress%/%amount%)"
+info-loading: "La progression de &e%player% &7est en cours de &echargement&7, réessayez dans un instant."
+info-no-data: "&e%player% &7n'a &caucune progression &7enregistrée sur ce serveur."
+info-network-offline: "Avec SHNetwork, seuls les joueurs &econnectés &7peuvent être consultés : &c%player% &7ne l'est pas."

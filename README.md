@@ -28,16 +28,19 @@ Utilisé sur : **Opale**.
 | Commande | Alias | Description | Permission |
 |---|---|---|---|
 | `/shprogress progress <joueur> <arbre/progrès> <quantité>` | `/shp` | Fait progresser un joueur connecté (utilisé par SHCrates). | `shprogress.admin.progress` |
-| `/shprogress reload` | `/shp` | Recharge `config.yml`, `messages.yml` et les arbres. | `shprogress.admin.reload` |
+| `/shprogress reload` | `/shp` | Recharge `config.yml`, `messages.yml` et tous les arbres. Un fichier illisible annule le rechargement : la configuration, les textes et les arbres actuels restent actifs et le fichier fautif est indiqué. | `shprogress.admin.reload` |
 | `/shprogress import` | `/shp` | Avec SHNetwork : copie les fichiers `playerdata/` dans la base du réseau. | `shprogress.admin.import` |
+| `/shprogress info <joueur>` | `/shp` | Progrès terminés par arbre et progrès les plus avancés d'un joueur (connecté, ou hors ligne sans SHNetwork). Lecture seule. | `shprogress.admin.info` |
 
 ## Permissions
 
 | Permission | Description | Par défaut |
 |---|---|---|
+| `shprogress.admin` | Toute l'administration (parent des quatre permissions suivantes). | `op` |
 | `shprogress.admin.progress` | Permet de faire progresser un joueur dans un objectif. | `op` |
-| `shprogress.admin.reload` | Permet de recharger la configuration du plugin. | `op` |
+| `shprogress.admin.reload` | Permet de recharger `config.yml`, `messages.yml` et les arbres. | `op` |
 | `shprogress.admin.import` | Permet de copier la progression des fichiers de ce serveur dans la base du réseau. | `op` |
+| `shprogress.admin.info` | Permet de consulter la progression d'un joueur. | `op` |
 
 ## Configuration
 
