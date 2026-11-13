@@ -45,8 +45,8 @@ reseau:
   # Base partagée par tous les serveurs : tables shprogress_progress (uuid, advancement, progress)
   # et shprogress_rewards (uuid, advancement, claimed_at)
   base-de-donnees:
-    url: "jdbc:mariadb://127.0.0.1:3306/bo_net"
-    utilisateur: shprogress
+    url: "jdbc:mariadb://127.0.0.1:3306/minecraft"
+    utilisateur: CHANGE_ME
     mot-de-passe: CHANGE_ME
     # Délai maximal de connexion et de réponse de la base, en millisecondes
     delai-ms: 3000
